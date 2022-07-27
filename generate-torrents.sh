@@ -21,6 +21,16 @@ if [ -z "${TORRENT_DIR}" ]; then
 	exit 1
 fi
 
+if [ -z "${TRACKERS}" ]; then
+	echo "\$TRACKERS must be defined in ${TOPDIR}/env"
+	exit 1
+fi
+
+if [ -z "${WEB_MIRRORS}" ]; then
+	echo "\$WEB_MIRRORS must be defined in ${TOPDIR}/env"
+	exit 1
+fi
+
 mkdir -p "${TORRENT_DIR}"
 
 generate_torrent() {
@@ -49,11 +59,21 @@ generate_torrent() {
 	#echo "  * torrent pieces: ${_pieces}"
 	#echo "  * torrent piece length: ${_mkt_piece}"
 
+	_web_args=()
+	for URL in "${WEB_MIRRORS[@]}"; do
+		_web_args=("${_web_args[@]}" "-w" "${URL}/${_file}")
+	done
+
+	_tracker_args=()
+	for TRACKER in "${TRACKERS[@]}"; do
+		_tracker_args=("${_tracker_args[@]}" "-a" "${TRACKER}")
+	done
+
 	TEMPFILE="$(mktemp /tmp/torrent-XXXXXX.torrent)"
+	rm -f "${TEMPFILE}"
 	mktorrent \
-		-a 'udp://tracker.opentrackr.org:1337/announce' \
-		-a 'udp://tracker.openbittorrent.com:6969/announce' \
-		-a 'http://tracker.openbittorrent.com:80/announce' \
+		"${_tracker_args[@]}" \
+		"${_web_args[@]}" \
 		-l "${_mkt_piece}" \
 		-o "${TEMPFILE}" \
 		"${_isofile}" 2>&1 | grep -v Hashed | grep -v -E '^$'
