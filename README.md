@@ -29,7 +29,7 @@ The seeding script assumes it is what you're using for torrents.
 
 Copy `env.sample` to `env` and edit to match your environment.
 
-By default it will sync from the ravynOS upstream mirror, to the `./nightly` directory.
+By default it will sync from the ravynOS upstream mirror, to the `./nightly` directory, and generate torrents in the `./public` directory.
 
 ## Running an Update
 

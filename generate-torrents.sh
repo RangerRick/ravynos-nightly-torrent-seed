@@ -6,22 +6,28 @@ set -o pipefail
 TOPDIR="$(cd "$(dirname "$0")"; pwd)"
 . "${TOPDIR}/env"
 
-if [ -z "${RSYNC_SOURCE}" ]; then
-	echo "\$RSYNC_SOURCE must be defined in ${TOPDIR}/env"
-	exit 1
-fi
-
 if [ -z "${LOCAL_DIR}" ]; then
 	echo "\$LOCAL_DIR must be defined in ${TOPDIR}/env"
 	exit 1
 fi
 
-mkdir -p "${LOCAL_DIR}"
+if [ ! -d "${LOCAL_DIR}" ]; then
+	echo "local mirror directory ${LOCAL_DIR} does not exist"
+	exit 1
+fi
+
+if [ -z "${TORRENT_DIR}" ]; then
+	echo "\$TORRENT_DIR must be defined in ${TOPDIR}/env"
+	exit 1
+fi
+
+mkdir -p "${TORRENT_DIR}"
 
 generate_torrent() {
 	local _file="$1"; shift
 
 	local _isofile="${LOCAL_DIR}/${_file}"
+	local _torrentfile="${TORRENT_DIR}/${_file}.torrent"
 
 	local _mkt_piece=18
 	local _pieces=9999
@@ -48,7 +54,7 @@ generate_torrent() {
 		-a 'udp://tracker.openbittorrent.com:6969/announce' \
 		-a 'http://tracker.openbittorrent.com:80/announce' \
 		-l "${_mkt_piece}" \
-		-o "${_isofile}.torrent" \
+		-o "${_torrentfile}" \
 		"${_isofile}" 2>&1 | grep -v Hashed
 	cd - >/dev/null || exit 1
 }
@@ -56,7 +62,7 @@ generate_torrent() {
 echo "* generating torrents..."
 cd "${LOCAL_DIR}" || exit 1
 find * -type f -name \*.iso | while read -r ISO; do
-	if [ -e "${LOCAL_DIR}/${ISO}.torrent" ]; then
+	if [ -e "${TORRENT_DIR}/${ISO}.torrent" ]; then
 		echo "* ${ISO}.torrent: exists"
 	else
 		echo "* ${ISO}.torrent: generating"
@@ -65,12 +71,12 @@ find * -type f -name \*.iso | while read -r ISO; do
 done
 
 echo "* removing outdated torrent files that don't have ISO files anymore..."
-cd "${LOCAL_DIR}" || exit 1
+cd "${TORRENT_DIR}" || exit 1
 for TORRENT in *.torrent; do
 	ISOFILE="${TORRENT//.torrent/}"
-	if [ ! -e "${ISOFILE}" ]; then
-		rm -f "${LOCAL_DIR}/${ISOFILE}".torrent
-		echo "* removed ${ISOFILE}.torrent"
+	if [ ! -e "${LOCAL_DIR}/${ISOFILE}" ]; then
+		rm -f "${TORRENT}"
+		echo "* removed ${TORRENT}"
 	fi
 done
 cd - >/dev/null || exit 1
