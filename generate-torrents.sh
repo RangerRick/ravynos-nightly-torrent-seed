@@ -49,13 +49,15 @@ generate_torrent() {
 	#echo "  * torrent pieces: ${_pieces}"
 	#echo "  * torrent piece length: ${_mkt_piece}"
 
+	TEMPFILE="$(mktemp /tmp/torrent-XXXXXX.torrent)"
 	mktorrent \
 		-a 'udp://tracker.opentrackr.org:1337/announce' \
 		-a 'udp://tracker.openbittorrent.com:6969/announce' \
 		-a 'http://tracker.openbittorrent.com:80/announce' \
 		-l "${_mkt_piece}" \
-		-o "${_torrentfile}" \
-		"${_isofile}" 2>&1 | grep -v Hashed
+		-o "${TEMPFILE}" \
+		"${_isofile}" 2>&1 | grep -v Hashed | grep -v -E '^$'
+	mv "${TEMPFILE} "${_torrentfile}"
 	cd - >/dev/null || exit 1
 }
 
