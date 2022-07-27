@@ -12,6 +12,7 @@ First, set up Transmission.
 The seeding script assumes it is what you're using for torrents.
 
 1. Make sure local auth is disabled (`"rpc-authentication-required": false`), or that you have properly set up RPC auth and a `.netrc` file or similar.
+   If you can run `transmission-remote -l` on the command-line without an auth prompt, you did it right.
 2. Make sure limits are such that seeding will not stop, and that all seeds will be actively downloadable from the default directory.
    * `"download-limit-enabled": 0`
    * `"download-queue-enabled": false`
