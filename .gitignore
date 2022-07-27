@@ -1,0 +1,5 @@
+# vim droppings
+.*.sw[op]
+
+env
+nightly
