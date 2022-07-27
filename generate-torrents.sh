@@ -57,7 +57,7 @@ generate_torrent() {
 		-l "${_mkt_piece}" \
 		-o "${TEMPFILE}" \
 		"${_isofile}" 2>&1 | grep -v Hashed | grep -v -E '^$'
-	mv "${TEMPFILE} "${_torrentfile}"
+	mv "${TEMPFILE}" "${_torrentfile}"
 	cd - >/dev/null || exit 1
 }
 
