@@ -61,7 +61,7 @@ generate_torrent() {
 
 	_web_args=()
 	for URL in "${WEB_MIRRORS[@]}"; do
-		_web_args=("${_web_args[@]}" "-w" "${URL}/${_file}")
+		_web_args=("${_web_args[@]}" "-w" "${URL}${_file}")
 	done
 
 	_tracker_args=()
@@ -69,7 +69,7 @@ generate_torrent() {
 		_tracker_args=("${_tracker_args[@]}" "-a" "${TRACKER}")
 	done
 
-	TEMPFILE="$(mktemp /tmp/torrent-XXXXXX.torrent)"
+	TEMPFILE="$(mktemp --tmpdir torrent-XXXXXX.torrent)"
 	rm -f "${TEMPFILE}"
 	mktorrent \
 		"${_tracker_args[@]}" \
@@ -80,6 +80,21 @@ generate_torrent() {
 	mv "${TEMPFILE}" "${_torrentfile}"
 	touch -r "${_isofile}" "${_torrentfile}"
 	cd - >/dev/null || exit 1
+}
+
+get_hash_for_torrent() {
+	local _file="$1"; shift
+	transmission-show "${_file}" | grep Hash: | awk '{ print $NF }'
+}
+
+get_name_for_torrent() {
+	local _file="$1"; shift
+	transmission-show "${_file}" | grep -E '^Name:' | awk '{ print $NF }'
+}
+
+get_magnet_uri_for_torrent() {
+	local _file="$1"; shift
+	transmission-show --magnet "${_file}"
 }
 
 echo "* generating torrents..."
@@ -102,6 +117,60 @@ for TORRENT in *.torrent; do
 		echo "* removed ${TORRENT}"
 	fi
 done
+cd - >/dev/null || exit 1
+
+RSSTMP="$(mktemp --tmpdir torrent.rss.XXXXXX)"
+echo "* generating RSS feed..."
+
+cd "${TORRENT_DIR}" || exit 1
+
+PUBDATE="$(date +"%a, %d %b %Y %H:00:00 %Z")"
+BUILDDATE="$(date +"%a, %d %b %Y %H:%M:%S %Z")"
+
+cat <<END >>"${RSSTMP}"
+<rss version="2.0">
+	<channel>
+		<title>ravynOS development snapshots</title>
+		<link>https://ravynos-seed.raccoonfink.com/feed.rss</link>
+		<description>Development Snapshot Builds of ravynOS, generated (usually) nightly</description>
+		<language>en-CA</language>
+		<pubDate>${PUBDATE}</pubDate>
+		<lastBuildDate>${BUILDDATE}</lastBuildDate>
+		<generator>https://github.com/RangerRick/ravynos-nightly-torrent-seed</generator>
+		<docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+		<ttl>60</ttl>
+END
+
+# example item:
+#        <item>
+#            <title>0 A.D. Alpha 25b - macOS (amd64)</title>
+#            <description>Torrent for 0ad - macOS (amd64)</description>
+#            <link>https://fosstorrents.com/files/0ad-0.0.25b-alpha-osx64.dmg.torrent</link>
+#            <guid isPermaLink="false">968147694127a441925290fd6a0f0048e553aea32a4847c37cb493de7f8a0084</guid>
+#            <pubDate>Wed, 29 Sep 2021 21:18:45 ADT</pubDate>
+#        </item>
+
+for TORRENT in $(ls -1rt *.torrent); do
+	torrent_name="$(get_name_for_torrent "${TORRENT}")"
+	torrent_hash="$(get_hash_for_torrent "${TORRENT}")"
+	magnet_uri="$(get_magnet_uri_for_torrent "${TORRENT}")"
+
+	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %Y %H:00:00 %Z")"
+	cat <<END >>"${RSSTMP}"
+		<item>
+			<title>${torrent_name}</title>
+			<link>${magnet_uri}</link>
+			<guid isPermaLink="false">${torrent_hash}</guid>
+			<pubDate>${torrent_date}</pubDate>
+		</item>
+END
+done
+
+cat <<END >>"${RSSTMP}"
+	</channel>
+</rss>
+END
+mv "${RSSTMP}" "${TORRENT_DIR}/feed.rss"
 cd - >/dev/null || exit 1
 
 echo "done"
