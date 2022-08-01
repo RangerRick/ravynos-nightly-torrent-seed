@@ -170,6 +170,7 @@ cat <<END >>"${RSSTMP}"
 	</channel>
 </rss>
 END
+chmod 644 "${RSSTMP}"
 mv "${RSSTMP}" "${TORRENT_DIR}/feed.rss"
 cd - >/dev/null || exit 1
 
