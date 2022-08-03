@@ -161,6 +161,7 @@ for TORRENT in $(ls -1rt *.torrent); do
 	torrent_name="$(get_name_for_torrent "${TORRENT}")"
 	torrent_hash="$(get_hash_for_torrent "${TORRENT}")"
 	magnet_uri="$(get_magnet_uri_for_torrent "${TORRENT}")"
+	escaped_magnet_uri="$(echo "${magnet_uri}" | sed -e 's,&,&amp;,g' -e 's,",&quot;,g' -e 's,'',&apos;,g' -e 's,<,&lt;,g' -e 's,>,&gt;,g')"
 
 	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %Y %H:00:00 GMT")"
 	cat <<END >>"${RSSTMP}"
@@ -174,7 +175,7 @@ END
 	cat <<END >>"${MAGNETTMP}"
 		<item>
 			<title>${torrent_name}</title>
-			<link>${magnet_uri}</link>
+			<link>${escaped_magnet_uri}</link>
 			<guid isPermaLink="false">magnet.${torrent_hash}</guid>
 			<pubDate>${torrent_date}</pubDate>
 		</item>
