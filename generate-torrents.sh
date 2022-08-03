@@ -120,12 +120,14 @@ done
 cd - >/dev/null || exit 1
 
 RSSTMP="$(mktemp --tmpdir torrent.rss.XXXXXX)"
+MAGNETTMP="$(mktemp --tmpdir magnet.rss.XXXXXX)"
+
 echo "* generating RSS feed..."
 
 cd "${TORRENT_DIR}" || exit 1
 
-PUBDATE="$(date +"%a, %d %b %Y %H:00:00 %Z")"
-BUILDDATE="$(date +"%a, %d %b %Y %H:%M:%S %Z")"
+PUBDATE="$(date +"%a, %d %b %y %H:00:00 %Z")"
+BUILDDATE="$(date +"%a, %d %b %y %H:%M:%S %Z")"
 
 cat <<END >>"${RSSTMP}"
 <rss version="2.0">
@@ -141,6 +143,8 @@ cat <<END >>"${RSSTMP}"
 		<ttl>60</ttl>
 END
 
+cat "${RSSTMP}" >> "${MAGNETTMP}"
+
 # example item:
 #        <item>
 #            <title>0 A.D. Alpha 25b - macOS (amd64)</title>
@@ -155,12 +159,20 @@ for TORRENT in $(ls -1rt *.torrent); do
 	torrent_hash="$(get_hash_for_torrent "${TORRENT}")"
 	magnet_uri="$(get_magnet_uri_for_torrent "${TORRENT}")"
 
-	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %Y %H:00:00 %Z")"
+	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %y %H:00:00 %Z")"
 	cat <<END >>"${RSSTMP}"
 		<item>
 			<title>${torrent_name}</title>
+			<link>https://ravynos-seed.raccoonfink.com/${TORRENT}</link>
+			<guid isPermaLink="false">torrent.${torrent_hash}</guid>
+			<pubDate>${torrent_date}</pubDate>
+		</item>
+END
+	cat <<END >>"${MAGNETTMP}"
+		<item>
+			<title>${torrent_name}</title>
 			<link>${magnet_uri}</link>
-			<guid isPermaLink="false">${torrent_hash}</guid>
+			<guid isPermaLink="false">magnet.${torrent_hash}</guid>
 			<pubDate>${torrent_date}</pubDate>
 		</item>
 END
@@ -170,8 +182,15 @@ cat <<END >>"${RSSTMP}"
 	</channel>
 </rss>
 END
+cat <<END >>"${MAGNETTMP}"
+	</channel>
+</rss>
+END
+
 chmod 644 "${RSSTMP}"
+chmod 644 "${MAGNETTMP}"
 mv "${RSSTMP}" "${TORRENT_DIR}/feed.rss"
+mv "${MAGNETTMP}" "${TORRENT_DIR}/magnet.rss"
 cd - >/dev/null || exit 1
 
 echo "done"
