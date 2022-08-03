@@ -126,8 +126,8 @@ echo "* generating RSS feed..."
 
 cd "${TORRENT_DIR}" || exit 1
 
-PUBDATE="$(date +"%a, %d %b %Y %H:00:00 %Z")"
-BUILDDATE="$(date +"%a, %d %b %Y %H:%M:%S %Z")"
+PUBDATE="$(date +"%a, %d %b %Y %H:00:00 GMT")"
+BUILDDATE="$(date +"%a, %d %b %Y %H:%M:%S GMT")"
 
 cat <<END >>"${RSSTMP}"
 <rss version="2.0">
@@ -159,7 +159,7 @@ for TORRENT in $(ls -1rt *.torrent); do
 	torrent_hash="$(get_hash_for_torrent "${TORRENT}")"
 	magnet_uri="$(get_magnet_uri_for_torrent "${TORRENT}")"
 
-	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %Y %H:00:00 %Z")"
+	torrent_date="$(date -r "${TORRENT}" +"%a, %d %b %Y %H:00:00 GMT")"
 	cat <<END >>"${RSSTMP}"
 		<item>
 			<title>${torrent_name}</title>
