@@ -130,7 +130,7 @@ PUBDATE="$(date +"%a, %d %b %Y %H:00:00 GMT")"
 BUILDDATE="$(date +"%a, %d %b %Y %H:%M:%S GMT")"
 
 cat <<END >>"${RSSTMP}"
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
 		<title>ravynOS development snapshots</title>
 		<link>https://ravynos-seed.raccoonfink.com/feed.rss</link>
@@ -144,6 +144,9 @@ cat <<END >>"${RSSTMP}"
 END
 
 cat "${RSSTMP}" >> "${MAGNETTMP}"
+
+echo '		<atom:link href="https://ravynos-seed.raccoonfink.com/feed.rss" rel="self" type="application/rss+xml" />' >> "${RSSTMP}"
+echo '		<atom:link href="https://ravynos-seed.raccoonfink.com/magnet.rss" rel="self" type="application/rss+xml" />' >> "${MAGNETTMP}"
 
 # example item:
 #        <item>
